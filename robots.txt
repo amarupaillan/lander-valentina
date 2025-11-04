@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://clinicavalentinahernandez.cl/sitemap.xml
+Sitemap: https://clinicavaleriahernandez.cl/sitemap.xml
 
 # Disallow admin and private areas
 Disallow: /admin/
