@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://clinicavaleriahernandez.cl/sitemap.xml
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /private/
+Disallow: /.git/
+Disallow: /node_modules/
+
+# Allow important pages
+Allow: /
+Allow: /gracias.html
+Allow: /privacidad.html
+Allow: /terminos.html
+
+# Allow assets
+Allow: /css/
+Allow: /js/
+Allow: /assets/
+
+# Crawl delay (optional)
+Crawl-delay: 1
