@@ -314,44 +314,76 @@ class TestimonialsPlayer {
     }
 
     init() {
-        if (!window.Vimeo || !window.Vimeo.Player) return;
+        this.waitForVimeo();
+    }
 
+    waitForVimeo() {
+        if (window.Vimeo && window.Vimeo.Player) {
+            this.setupPlayers();
+        } else {
+            // Reintentar cada 100ms hasta por 5 segundos
+            let attempts = 0;
+            const interval = setInterval(() => {
+                attempts++;
+                if (window.Vimeo && window.Vimeo.Player) {
+                    clearInterval(interval);
+                    this.setupPlayers();
+                } else if (attempts > 50) {
+                    clearInterval(interval);
+                    console.warn('Vimeo Player API failed to load');
+                }
+            }, 100);
+        }
+    }
+
+    setupPlayers() {
         this.cards.forEach((card, idx) => {
             const iframe = card.querySelector('iframe');
             if (!iframe) return;
-            const player = new Vimeo.Player(iframe);
-            this.players.set(iframe, player);
-            this.states.set(iframe, true); // start muted
+            
+            try {
+                const player = new Vimeo.Player(iframe);
+                this.players.set(iframe, player);
+                this.states.set(iframe, true); // start muted
 
-            // Ensure loop and start muted
-            player.setLoop(true).catch(() => {});
-            player.setVolume(0).catch(() => {});
+                // Ensure loop and start muted
+                player.setLoop(true).catch(() => {});
+                player.setVolume(0).catch(() => {});
+                player.setMuted(true).catch(() => {});
 
-            // Wire mute toggle
-            const toggle = card.querySelector('.mute-toggle');
-            if (toggle) {
-                // Estado inicial: muted
-                toggle.textContent = '🔇';
-                toggle.setAttribute('aria-label', 'Activar sonido');
-                toggle.addEventListener('click', async () => {
-                    try {
-                        const isMuted = this.states.get(iframe);
-                        if (isMuted) {
-                            await player.setVolume(1);
-                            await player.play().catch(() => {});
-                            this.states.set(iframe, false);
-                            toggle.textContent = '🔊';
-                            toggle.setAttribute('aria-label', 'Silenciar');
-                        } else {
-                            await player.setVolume(0);
-                            this.states.set(iframe, true);
-                            toggle.textContent = '🔇';
-                            toggle.setAttribute('aria-label', 'Activar sonido');
+                // Wire mute toggle
+                const toggle = card.querySelector('.mute-toggle');
+                if (toggle) {
+                    // Estado inicial: muted
+                    toggle.textContent = '🔇';
+                    toggle.setAttribute('aria-label', 'Activar sonido');
+                    
+                    toggle.addEventListener('click', async () => {
+                        try {
+                            const isMuted = this.states.get(iframe);
+                            if (isMuted) {
+                                // Unmute
+                                await player.setMuted(false);
+                                await player.setVolume(1);
+                                await player.play().catch(() => {}); // Ensure play if paused
+                                this.states.set(iframe, false);
+                                toggle.textContent = '🔊';
+                                toggle.setAttribute('aria-label', 'Silenciar');
+                            } else {
+                                // Mute
+                                await player.setVolume(0);
+                                await player.setMuted(true);
+                                this.states.set(iframe, true);
+                                toggle.textContent = '🔇';
+                                toggle.setAttribute('aria-label', 'Activar sonido');
+                            }
+                        } catch (e) {
+                            console.warn('Vimeo volume toggle failed', e);
                         }
-                    } catch (e) {
-                        console.warn('Vimeo volume toggle failed', e);
-                    }
-                });
+                    });
+                }
+            } catch (err) {
+                console.error('Error initializing Vimeo player', err);
             }
         });
     }
