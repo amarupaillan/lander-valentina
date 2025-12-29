@@ -304,91 +304,6 @@ class PerformanceOptimizer {
     }
 }
 
-// ===== TESTIMONIALS PLAYER =====
-class TestimonialsPlayer {
-    constructor() {
-        this.cards = Array.from(document.querySelectorAll('.testimonial-video'));
-        this.players = new Map();
-        this.states = new Map(); // track muted state per player
-        this.init();
-    }
-
-    init() {
-        this.waitForVimeo();
-    }
-
-    waitForVimeo() {
-        if (window.Vimeo && window.Vimeo.Player) {
-            this.setupPlayers();
-        } else {
-            // Reintentar cada 100ms hasta por 5 segundos
-            let attempts = 0;
-            const interval = setInterval(() => {
-                attempts++;
-                if (window.Vimeo && window.Vimeo.Player) {
-                    clearInterval(interval);
-                    this.setupPlayers();
-                } else if (attempts > 50) {
-                    clearInterval(interval);
-                    console.warn('Vimeo Player API failed to load');
-                }
-            }, 100);
-        }
-    }
-
-    setupPlayers() {
-        this.cards.forEach((card, idx) => {
-            const iframe = card.querySelector('iframe');
-            if (!iframe) return;
-            
-            try {
-                const player = new Vimeo.Player(iframe);
-                this.players.set(iframe, player);
-                this.states.set(iframe, true); // start muted
-
-                // Ensure loop and start muted
-                player.setLoop(true).catch(() => {});
-                player.setVolume(0).catch(() => {});
-                player.setMuted(true).catch(() => {});
-
-                // Wire mute toggle
-                const toggle = card.querySelector('.mute-toggle');
-                if (toggle) {
-                    // Estado inicial: muted
-                    toggle.textContent = '🔇';
-                    toggle.setAttribute('aria-label', 'Activar sonido');
-                    
-                    toggle.addEventListener('click', async () => {
-                        try {
-                            const isMuted = this.states.get(iframe);
-                            if (isMuted) {
-                                // Unmute
-                                await player.setMuted(false);
-                                await player.setVolume(1);
-                                await player.play().catch(() => {}); // Ensure play if paused
-                                this.states.set(iframe, false);
-                                toggle.textContent = '🔊';
-                                toggle.setAttribute('aria-label', 'Silenciar');
-                            } else {
-                                // Mute
-                                await player.setVolume(0);
-                                await player.setMuted(true);
-                                this.states.set(iframe, true);
-                                toggle.textContent = '🔇';
-                                toggle.setAttribute('aria-label', 'Activar sonido');
-                            }
-                        } catch (e) {
-                            console.warn('Vimeo volume toggle failed', e);
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error('Error initializing Vimeo player', err);
-            }
-        });
-    }
-}
-
 // ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar todas las funcionalidades
@@ -398,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Optimizaciones de rendimiento
     PerformanceOptimizer.init();
-    new TestimonialsPlayer();
     
     // Analytics
     Analytics.trackPageView('Landing Page');
